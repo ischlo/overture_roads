@@ -1,0 +1,208 @@
+---
+title: "Local setup for working with Overture data"
+# css: [pres_style.scss,default]
+execute: 
+  echo: true
+  eval: true
+  include: true
+ipynb-shell-interactivity: all
+keep-ipynb: true
+format: 
+  revealjs: 
+    theme: [pres_style.scss,default]
+    fig-align: center
+    code-fold: false
+author: 
+  - name: Ivann Schlosser
+    email: ivann.schlosser@ox.co.uk
+    url: ischlosser.com
+    affiliations:
+      - name: Oxford Progamme for Sustainable Infrastructure Systems (OPSIS)
+        address: South Parks Road
+        postal-code: OX1 3QY
+        city: Oxford
+---
+
+## Importing the data
+
+The Overture website recommends various workflows to download the data. Among them, the one allowing to work a local and self-sufficient manner is the python based [`overturemaps`](https://github.com/OvertureMaps/overturemaps-py) CLI, available from pip. It requires few arguments: 4 numeric values for the bbox, the type of layer to extract and the type of file to write into.
+
+```{python}
+#| echo: true
+#| eval: false
+
+!overturemaps download --bbox=west,south,east,north -f geoparquet --type=segment -o tanzania_roads.geoparquet
+
+```
+
+More information on the values allowed in `--type` is available via the shell command `overturemaps download --help`. More methods to download Overture data are shown in the [documentation](https://docs.overturemaps.org/getting-data/).
+
+## Working with the data
+
+Once the data is stored locally as `.geoparquet`, we can work with it in python with `duckdb`.
+
+```{python}
+#| echo: false
+
+import geopandas as gpd
+from matplotlib import pyplot as plt
+from matplotlib.colors import ListedColormap
+
+```
+
+```{python}
+
+import duckdb as db
+
+roads = db.read_parquet("../tanzania_roads.geoparquet")
+
+```
+
+The data set is read as traditional parquet in which the geometry column is a `blob`.
+
+```{python}
+#| echo: false
+#| 
+db.sql("SELECT id,class,geometry FROM roads LIMIT 10;")
+
+```
+
+The `duckdb` loaders do not support reading *geoparquet* at the moment, but this feature is expected in the upcoming version. We stick to this format for its efficiency when storing large extracts.
+
+To further work with the geometry, we install the `duckdb` extension.
+
+```{python}
+# installing and loading the extension.
+db.install_extension("spatial")
+db.load_extension("spatial")
+
+```
+
+This will allow us to work with the geometry column from within the database, bypassing the limitation of the parquet reader.
+
+## Basic interaction with the data
+
+Still with the `duckdb` package and its SQL-like syntax.
+
+#### Counting values
+
+```{python}
+
+db.sql("SELECT count(*) as N_segments,class FROM roads GROUP BY class;")
+
+```
+
+## Data Manipulation
+
+The advantage of working with `duckdb` is that intensive computations are performed outside the python environment, and all we need to do is *collect* the results.
+
+### Etracting a subset
+
+```{python}
+
+# filtering out cycleways
+ways = db.sql("Select id,ST_GeomFromWKB(geometry) as geometry,subtype,class from roads where class='primary';")
+
+# intermediate step: transform the geometry into WKT and read the subset of data as a pandas DataFrame
+ways_wkt = db.sql("select id, ST_AsText(geometry) as geometry, subtype, class from ways;").df()
+
+# Finally, convert the geometry and create a geopandas GeoDataFrame. 
+ways_df = gpd.GeoDataFrame(ways_wkt
+                          ,geometry=gpd.GeoSeries.from_wkt(ways_wkt["geometry"])
+                          ,crs=4326
+                          )
+ways_df.head()
+
+```
+
+The resulting types:
+
+```{python}
+#| echo: false
+#| fig-align: center
+
+ways_df.dtypes
+
+```
+
+## Plotting
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| fig-align: center
+# label: fig-polar
+# fig-cap: "Cycleways of Tanzania"
+
+
+f, ax = plt.subplots()
+
+cmap = ListedColormap(
+    [
+        "#941339",  # motorway
+        # "#982261",  # primary
+        # "#020202",  # rail
+        "#8748bc",  # secondary
+        # "#48bc7b",  # tertiary
+        # "#cb3e4e",  # trunk
+    ]
+)
+
+ways_df.plot(
+    ax=ax,
+    column="class",
+    legend=True,
+    alpha=1,
+    linewidth=0.5,
+    categorical=True,
+    cmap=cmap,
+)
+
+ax.grid()
+ax.set_title("Example segment class")
+ax.set_xlabel("Longitude [deg]")
+ax.set_ylabel("Latitude [deg]")
+
+plt.show()
+
+```
+
+## Other workflows
+
+### GeoPandas
+
+Once the data is extracted, other options are available to work with it. `GeoPandas` converts the geometry column for us, so no extra steps are required.
+
+```{python}
+#| echo: true
+#| eval: false
+#| 
+ways_gpd = gpd.read_parquet("../tanzania_roads.geoparquet"
+                        #  ,columns=["id","class","connector_ids","geometry"] # read in desired columns only.
+                         )
+                         
+```
+
+It is however less efficient to read with this method, so it's only recommended for relatively small data sets.
+
+### pyArrow
+
+Is the under the hood reader of `geopandas`.
+
+```{python}
+#| echo: true
+#| eval: false
+#| 
+import pyarrow.parquet as pq
+
+ways_arrow = pq.read_table("../tanzania_roads.geoparquet")
+
+```
+
+### Still more tools
+
+The vast python package ecosystem provides a wide range of tools that work with (geo)parquet and (geo)arrow file formats and specifications, among them:
+
+-   [geoarrow](https://github.com/geoarrow/geoarrow-python): the low level specification of parquet.
+-   [geoparquet](https://github.com/darcy-r/geoparquet-python)
