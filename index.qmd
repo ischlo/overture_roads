@@ -35,7 +35,7 @@ The Overture website recommends various workflows to download the data. Among th
 
 ```
 
-More information on the values allowed in `--type` is available via the shell command `overturemaps download --help`. More methods to download Overture data are shown in the [documentation](https://docs.overturemaps.org/getting-data/).
+More information on the values allowed in `--type` is available via the shell command `overturemaps download --help`. More methods to download Overture data are shown in the [documentation](https://docs.overturemaps.org/getting-data/){target="_blank"}.
 
 ## Working with the data
 
@@ -204,5 +204,5 @@ ways_arrow = pq.read_table("../tanzania_roads.geoparquet")
 
 The vast python package ecosystem provides a wide range of tools that work with (geo)parquet and (geo)arrow file formats and specifications, among them:
 
--   [geoarrow](https://github.com/geoarrow/geoarrow-python): the low level specification of parquet.
--   [geoparquet](https://github.com/darcy-r/geoparquet-python)
+-   [geoarrow](https://github.com/geoarrow/geoarrow-python){target="_blank"}: the low level specification of parquet.
+-   [geoparquet](https://github.com/darcy-r/geoparquet-python){target="_blank"}
