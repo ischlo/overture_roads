@@ -414,7 +414,7 @@
 <section id="importing-the-data" class="slide level2">
 <h2>Importing the data</h2>
 <p>The Overture website recommends various workflows to download the data. Among them, the one allowing to work a local and self-sufficient manner is the python based <a href="https://github.com/OvertureMaps/overturemaps-py"><code>overturemaps</code></a> CLI, available from pip. It requires few arguments: 4 numeric values for the bbox, the type of layer to extract and the type of file to write into.</p>
-<div id="25b26da4" class="cell" data-execution_count="1">
+<div id="206d85f8" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href=""></a><span class="op">!</span>overturemaps download <span class="op">--</span>bbox<span class="op">=</span>west,south,east,north <span class="op">-</span>f geoparquet <span class="op">--</span><span class="bu">type</span><span class="op">=</span>segment <span class="op">-</span>o tanzania_roads.geoparquet</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>More information on the values allowed in <code>--type</code> is available via the shell command <code>overturemaps download --help</code>. More methods to download Overture data are shown in the <a href="https://docs.overturemaps.org/getting-data/">documentation</a>.</p>
@@ -422,13 +422,13 @@
 <section id="working-with-the-data" class="slide level2">
 <h2>Working with the data</h2>
 <p>Once the data is stored locally as <code>.geoparquet</code>, we can work with it in python with <code>duckdb</code>.</p>
-<div id="1f7bb3f6" class="cell" data-execution_count="3">
+<div id="366790ff" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href=""></a><span class="im">import</span> duckdb <span class="im">as</span> db</span>
 <span id="cb2-2"><a href=""></a></span>
 <span id="cb2-3"><a href=""></a>roads <span class="op">=</span> db.read_parquet(<span class="st">"../tanzania_roads.geoparquet"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The data set is read as traditional parquet in which the geometry column is a <code>blob</code>.</p>
-<div id="75e10334" class="cell" data-execution_count="4">
+<div id="49649ffd" class="cell" data-execution_count="4">
 <div class="cell-output cell-output-display" data-execution_count="3">
 <pre><code>┌──────────────────────┬──────────────┬────────────────────────────────────────────────────────────────────────────────┐
 │          id          │    class     │                                    geometry                                    │
@@ -451,7 +451,7 @@
 </div>
 <p>The <code>duckdb</code> loaders do not support reading <em>geoparquet</em> at the moment, but this feature is expected in the upcoming version. We stick to this format for its efficiency when storing large extracts.</p>
 <p>To further work with the geometry, we install the <code>duckdb</code> extension.</p>
-<div id="239e6aa2" class="cell" data-execution_count="5">
+<div id="ca717c33" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href=""></a><span class="co"># installing and loading the extension.</span></span>
 <span id="cb4-2"><a href=""></a>db.install_extension(<span class="st">"spatial"</span>)</span>
 <span id="cb4-3"><a href=""></a>db.load_extension(<span class="st">"spatial"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -462,35 +462,35 @@
 <h2>Basic interaction with the data</h2>
 <p>Still with the <code>duckdb</code> package and its SQL-like syntax.</p>
 <h4 id="counting-values">Counting values</h4>
-<div id="57126e52" class="cell" data-execution_count="6">
+<div id="12d24cf2" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href=""></a>db.sql(<span class="st">"SELECT count(*) as N_segments,class FROM roads GROUP BY class;"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="5">
 <pre><code>┌────────────┬───────────────┐
 │ N_segments │     class     │
 │   int64    │    varchar    │
 ├────────────┼───────────────┤
-│    1249548 │ path          │
-│        263 │ crosswalk     │
-│        144 │ cycleway      │
-│       1481 │ parking_aisle │
-│      57044 │ footway       │
-│      44763 │ trunk         │
-│        457 │ pedestrian    │
-│      27548 │ primary       │
-│         93 │ NULL          │
-│        373 │ steps         │
-│         63 │ motorway      │
 │      83290 │ unknown       │
 │       3974 │ driveway      │
 │     502882 │ track         │
 │      69192 │ secondary     │
-│    1792660 │ residential   │
-│         29 │ bridleway     │
-│        459 │ alley         │
-│     148719 │ tertiary      │
 │    1128458 │ unclassified  │
+│     148719 │ tertiary      │
 │        319 │ sidewalk      │
 │       2473 │ living_street │
+│      27548 │ primary       │
+│      44763 │ trunk         │
+│         93 │ NULL          │
+│        373 │ steps         │
+│        457 │ pedestrian    │
+│         63 │ motorway      │
+│    1249548 │ path          │
+│       1481 │ parking_aisle │
+│        263 │ crosswalk     │
+│        144 │ cycleway      │
+│    1792660 │ residential   │
+│      57044 │ footway       │
+│        459 │ alley         │
+│         29 │ bridleway     │
 ├────────────┴───────────────┤
 │ 22 rows          2 columns │
 └────────────────────────────┘</code></pre>
@@ -501,7 +501,7 @@
 <h2>Data Manipulation</h2>
 <p>The advantage of working with <code>duckdb</code> is that intensive computations are performed outside the python environment, and all we need to do is <em>collect</em> the results.</p>
 <h3 id="etracting-a-subset">Etracting a subset</h3>
-<div id="924da2a6" class="cell" data-execution_count="7">
+<div id="4f205723" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href=""></a><span class="co"># filtering out cycleways</span></span>
 <span id="cb7-2"><a href=""></a>ways <span class="op">=</span> db.sql(<span class="st">"Select id,ST_GeomFromWKB(geometry) as geometry,subtype,class from roads where class='primary';"</span>)</span>
 <span id="cb7-3"><a href=""></a></span>
@@ -583,7 +583,7 @@
 </div>
 </div>
 <p>The resulting types:</p>
-<div id="e48021c2" class="cell" data-execution_count="8">
+<div id="c3be52fe" class="cell" data-execution_count="8">
 <div class="cell-output cell-output-display" data-execution_count="7">
 <pre><code>id            object
 geometry    geometry
@@ -595,7 +595,7 @@ dtype: object</code></pre>
 </section>
 <section id="plotting" class="slide level2">
 <h2>Plotting</h2>
-<div id="00237eb7" class="cell" data-execution_count="9">
+<div id="993f0295" class="cell" data-execution_count="9">
 <div class="cell-output cell-output-display" data-execution_count="8">
 <pre><code>Text(0.5, 1.0, 'Example segment class')</code></pre>
 </div>
@@ -618,7 +618,7 @@ dtype: object</code></pre>
 <h2>Other workflows</h2>
 <h3 id="geopandas">GeoPandas</h3>
 <p>Once the data is extracted, other options are available to work with it. <code>GeoPandas</code> converts the geometry column for us, so no extra steps are required.</p>
-<div id="750963d6" class="cell" data-execution_count="10">
+<div id="7468ad09" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href=""></a>ways_gpd <span class="op">=</span> gpd.read_parquet(<span class="st">"../tanzania_roads.geoparquet"</span></span>
 <span id="cb12-2"><a href=""></a>                        <span class="co">#  ,columns=["id","class","connector_ids","geometry"] # read in desired columns only.</span></span>
 <span id="cb12-3"><a href=""></a>                         )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -626,7 +626,7 @@ dtype: object</code></pre>
 <p>It is however less efficient to read with this method, so it’s only recommended for relatively small data sets.</p>
 <h3 id="pyarrow">pyArrow</h3>
 <p>Is the under the hood reader of <code>geopandas</code>.</p>
-<div id="7ae5af6d" class="cell" data-execution_count="11">
+<div id="e72b1eb9" class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href=""></a><span class="im">import</span> pyarrow.parquet <span class="im">as</span> pq</span>
 <span id="cb13-2"><a href=""></a></span>
 <span id="cb13-3"><a href=""></a>ways_arrow <span class="op">=</span> pq.read_table(<span class="st">"../tanzania_roads.geoparquet"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
